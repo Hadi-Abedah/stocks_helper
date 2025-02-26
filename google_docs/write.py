@@ -4,7 +4,7 @@ def write(line):
     from pathlib import Path
     script_path = Path(__file__).resolve().parent
     # Path to the service account JSON key file
-    SERVICE_ACCOUNT_FILE = script_path / "python-docs-433001-743c22c36e61.json"
+    SERVICE_ACCOUNT_FILE = script_path / "python-docs-433001-acddc8c4514a.json"
 
     # Define the scope for Google Docs and Drive API
     SCOPES = ['https://www.googleapis.com/auth/documents', 'https://www.googleapis.com/auth/drive']
