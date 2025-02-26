@@ -9,6 +9,7 @@ def compute_daily_prec(ticker):
 
         # Ensure we have at least two days of data
         if len(data) < 2:
+            print(data)
             raise ValueError("Not enough data to compare. Ensure the stock has traded on the last two days.")
 
         # Get the close price for the previous day
@@ -31,8 +32,8 @@ def compute_daily_prec(ticker):
         #print(f"Previous close price for {ticker}: ${previous_close_price:.2f}")
         #print(f"Last available price for {ticker} on {datetime.now().date()}: ${last_close_price:.2f}")
         #print(f"Percentage change: {percentage_change:.2f}%")
-
-        return percentage_change
+        print(float(percentage_change.iloc[0]))
+        return float(percentage_change.iloc[0])
 
     except Exception as e:
         print(f"An error occurred: {e}")

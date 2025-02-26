@@ -42,12 +42,11 @@ def main():
     for comp in companies:
         perc_chng = compute_daily_prec(comp)
         try:
-            perc_value = float(str(perc_chng).strip("%"))
-            print(f"{comp}: {perc_value}%")
-            if perc_value <= -6:
+            print(f"{comp}: {perc_chng}%")
+            if perc_chng <= -5:
                 target_companies.append(comp)
-        except ValueError:
-            pass
+        except (ValueError, TypeError) as e:
+            print(e)
 
     # Alert via API
     print("Target companies:", target_companies)
