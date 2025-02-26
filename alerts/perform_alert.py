@@ -52,10 +52,10 @@ def main():
             print(e)
 
     # Alert via API
-    print("under_perform_stocks:", under_perform_stocks, label="under_perform_stocks")
-    print("over_perform_stocks:", over_perform_stocks, label="over_perform_stocks")
-    send_alert(under_perform_stocks)
-    send_alert(over_perform_stocks)
+    print("under_perform_stocks:", under_perform_stocks)
+    print("over_perform_stocks:", over_perform_stocks)
+    send_alert(under_perform_stocks, label="under_perform_stocks")
+    send_alert(over_perform_stocks, label="over_perform_stocks")
 
 if __name__ == "__main__":
     main()
