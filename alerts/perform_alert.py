@@ -8,11 +8,11 @@ from percentage_change.daily_perc_chng import compute_daily_prec
 API_URL = "https://api.callmebot.com/telegram/group.php"
 API_KEY = "LTEwMDIzODAyODEzNTU"
 
-def send_alert(companies):
+def send_alert(companies, label):
     if not companies:
         return  # Don't send an empty message
 
-    message = "Target companies: " + ", ".join(companies)
+    message = f"{label}: " + ", ".join(companies)
     formatted_message = message.replace(" ", "+")  # Replace spaces with '+' for URL encoding
 
     params = {
@@ -32,7 +32,8 @@ def send_alert(companies):
 def main():
     script_dir = Path(__file__).parent
     companies = []
-    target_companies = []
+    under_perform_stocks = []
+    over_perform_stocks = []
 
     df1 = pd.read_csv(f"{script_dir}/nasdaq_screener_1724268381610.csv")
     df2 = pd.read_csv(f"{script_dir}/nasdaq_screener_1724268475973.csv")
@@ -44,13 +45,17 @@ def main():
         try:
             print(f"{comp}: {perc_chng}%")
             if perc_chng <= -5:
-                target_companies.append(comp)
+                under_perform_stocks.append(comp)
+            elif perc_chng >= 5:
+                over_perform_stocks.append(comp)
         except (ValueError, TypeError) as e:
             print(e)
 
     # Alert via API
-    print("Target companies:", target_companies)
-    send_alert(target_companies)
+    print("under_perform_stocks:", under_perform_stocks, label="under_perform_stocks")
+    print("over_perform_stocks:", over_perform_stocks, label="over_perform_stocks")
+    send_alert(under_perform_stocks)
+    send_alert(over_perform_stocks)
 
 if __name__ == "__main__":
     main()
