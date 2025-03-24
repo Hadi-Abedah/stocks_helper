@@ -12,7 +12,7 @@ def send_alert(companies, label):
     if not companies:
         return  # Don't send an empty message
 
-    message = f"{label}: " + ", ".join(companies)
+    message = f"{label}: " + ",".join(companies)
     formatted_message = message.replace(" ", "+")  # Replace spaces with '+' for URL encoding
 
     params = {
