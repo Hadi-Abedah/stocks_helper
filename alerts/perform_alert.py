@@ -35,8 +35,8 @@ def main():
     under_perform_stocks = []
     over_perform_stocks = []
 
-    df1 = pd.read_csv(f"{script_dir}/nasdaq_screener_1724268381610.csv")
-    df2 = pd.read_csv(f"{script_dir}/nasdaq_screener_1724268475973.csv")
+    df1 = pd.read_csv(f"{script_dir}/nasdaq_screener_1742828936231.csv")
+    df2 = pd.read_csv(f"{script_dir}/nasdaq_screener_1742829385454.csv")
     companies = df1["Symbol"].tolist() + df2["Symbol"].tolist()
     print(f"There are {len(companies)} companies in my list.")
 
