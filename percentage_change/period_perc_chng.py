@@ -28,7 +28,8 @@ def daily_percentage_change(ticker, start_period, end_period, verbose=False):
         with pd.option_context('display.max_rows', None):
             print(percentage_change)
             print(data)
-    
+    else: 
+        print(percentage_change)
     return percentage_change.dropna()  # Optionally, you could choose to fillna(0) or handle NaN differently
 
 # Example usage:
@@ -66,6 +67,8 @@ def weekly__percentage_change(ticker, start_period, end_period, verbose=False):
         with pd.option_context('display.max_rows', None):
             print(percentage_change)
             print(data)
+    else: 
+        print(percentage_change)
     
     return percentage_change.dropna()
 

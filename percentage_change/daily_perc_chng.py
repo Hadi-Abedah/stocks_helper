@@ -1,45 +1,46 @@
 
-def compute_daily_prec(ticker):
+def compute_daily_prec(tickers=None):
+    """
+    Fetches historical closing price data and computes the daily percentage change for each ticker.
+    
+    Parameters:
+        tickers (list): List of ticker symbols. Defaults to a predefined list if None.
+        
+    Returns:
+        list: A list of tuples, mapping each ticker to its percentage change from the previous day.
+    """
     import yfinance as yf
-    from datetime import datetime
-
+    
+    if tickers is None:
+        tickers = ["AAPL", "MSFT", "GOOG", "AMZN", "TSLA"]
+    
+    daily_changes = []
     try:
-        # Download data for the last five days to ensure we capture the previous trading day's close
-        data = yf.download(ticker, period="5d", interval="1d")
+        data = yf.download(tickers, period="5d")
+        if data.empty:
+            print("No data found for the provided tickers.")
+            return None
+        
+        # Process each ticker
+        for ticker in tickers:
+            
+            close_prices = data['Close'][ticker]
+            if len(close_prices) < 2:
+                print(f"Not enough data to compute change for {ticker}")
+                continue
+            today_price = close_prices.iloc[-1]
+            yesterday_price = close_prices.iloc[-2]
+            perc_change = ((today_price - yesterday_price) / yesterday_price) * 100
+            #print(f"Percentage change for {ticker}: {perc_change:.2f}%")
+            daily_changes.append((ticker, perc_change))
 
-        # Ensure we have at least two days of data
-        if len(data) < 2:
-            print(data)
-            raise ValueError("Not enough data to compare. Ensure the stock has traded on the last two days.")
-
-        # Get the close price for the previous day
-        previous_close_price = data['Close'].iloc[-2]
-
-        # Download data for the current day to get the most recent price
-        intraday_data = yf.download(ticker, period="1d", interval="1m")
-
-        # Ensure there's data for the current day
-        if intraday_data.empty:
-            raise ValueError("No intraday data available for today. Market might be closed or data is not available.")
-
-        # Get the last available "Close" price for the current day (most recent price)
-        last_close_price = intraday_data['Close'].iloc[-1]
-
-        # Calculate the percentage change
-        percentage_change = ((last_close_price - previous_close_price) / previous_close_price) * 100
-
-        # Print the results
-        #print(f"Previous close price for {ticker}: ${previous_close_price:.2f}")
-        #print(f"Last available price for {ticker} on {datetime.now().date()}: ${last_close_price:.2f}")
-        #print(f"Percentage change: {percentage_change:.2f}%")
-        print(float(percentage_change.iloc[0]))
-        return float(percentage_change.iloc[0])
-
+        sorted_daily_changes = sorted(daily_changes, key=lambda x: x[1], reverse=True)
+        #print(sorted_daily_changes)
+        return sorted_daily_changes
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"Error fetching data: {e}")
         return None
 
 if __name__ == "__main__":
-    ticker = input("Enter the company ticker: ")
-    # Print the results
-    compute_daily_prec(ticker)
+    response = compute_daily_prec()
+    print(response)
