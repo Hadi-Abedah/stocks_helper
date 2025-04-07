@@ -10,4 +10,4 @@ __pycache__/
 .venv/
 
 snaprade/.env
-snaprade/python-docs-433001-62f7d270af5b.json
+snaprade/*.json
