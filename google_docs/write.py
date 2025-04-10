@@ -1,4 +1,7 @@
 def write(line):
+
+    """ Writes a line to the google docs file."""
+    
     from google.oauth2 import service_account
     from googleapiclient.discovery import build
     from pathlib import Path

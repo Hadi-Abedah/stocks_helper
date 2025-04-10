@@ -105,7 +105,8 @@ def get_transactions_for_user(start_date='2024-07-21', end_date=None):
 
 if __name__ == "__main__":
     get_api_status()
-    list_accounts()
+    #list_accounts()
+    
     #list_account_holdings()
     #resp = get_transactions_for_user("2024-07-21", "2025-09-25")
     #print(json.dumps(resp, indent=4))

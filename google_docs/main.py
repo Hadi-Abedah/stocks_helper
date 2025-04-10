@@ -1,4 +1,4 @@
-from . import read, write, nxt_ear, clean
+from . import read, write, nxt_ear, clean, populate_companies
 from datetime import datetime
 
 
@@ -18,6 +18,8 @@ def extract_date_from_line(line):
 def main():
     # remove previously added info.
     clean.clean()
+    # poulate the companies_owned file with companies owned shares
+    populate_companies.populate_companies_file()
     list_of_companies = read.read()
     lines_to_be_written = []
 
