@@ -9,5 +9,9 @@ __pycache__/
 # Virtual environment
 .venv/
 
-snaprade/.env
-snaprade/*.json
+snaptrade/.env
+snaptrade/python-docs-433001-62f7d270af5b.json
+snaptrade/stocks.json
+snaptrade/transactions.csv
+
+companies.csv
