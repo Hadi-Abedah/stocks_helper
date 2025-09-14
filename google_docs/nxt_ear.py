@@ -3,21 +3,22 @@ from datetime import datetime
 import pytz
 
 def get_next_earnings_date(ticker):
+    ''' arg: ticker or list of tickers
+        returns: string describing next exprected earning date with some expectation about revernue and earning'''
     try:
         stock = yf.Ticker(ticker.upper())
-        earnings_dates = stock.earnings_dates
-        
+        #print(type(stock.calendar))
+        # stock is now a dict
+        stock = stock.calendar
+        next_earnings_date = stock["Earnings Date"][0] # it gives 2 datatimes when uncertan, I choose the nearest
+        next_earning_date = next_earnings_date.strftime('%Y-%m-%d')
+        eps = stock["Earnings Average"]
+        revenue = stock["Revenue Average"] / 10**6 
+        if next_earning_date:
+            return f"""The next expected financial statement date for {ticker.upper()} is: {next_earning_date}.
+                The average EPS is: {eps}, with an average Revenue of {revenue} million dollars
 
-        # Convert the current time to match the timezone of the earnings dates
-        current_time = datetime.now(pytz.timezone("America/New_York"))
-
-        # Filter the earnings dates to only those in the future and sort them in ascending order
-        future_earnings = earnings_dates[earnings_dates.index > current_time].sort_index()
-        
-        if not future_earnings.empty:
-            next_earnings_date = future_earnings.index[0]
-            next_earning_date = next_earnings_date.strftime('%Y-%m-%d')
-            return f"The next expected financial statement date for {ticker.upper()} is: {next_earning_date}"
+            """
         else:
             return f"No upcoming earnings dates found for {ticker.upper()}."
     except Exception as e:
@@ -27,6 +28,6 @@ def get_next_earnings_date(ticker):
 
 
 if __name__ == "__main__":
-    ticker_symbol = input("Enter the ticker symbol: ").upper()
+    ticker_symbol = "JKS"
     next_date = get_next_earnings_date(ticker_symbol)
-    print(f"The next expected financial statement date for {ticker_symbol} is: {next_date}")
+    print(next_date)

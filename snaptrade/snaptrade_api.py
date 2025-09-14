@@ -76,7 +76,7 @@ def list_account_holdings():
     print(ticker_symbols)
     return ticker_symbols
 
-def get_transactions_for_user(start_date='2024-07-21', end_date=None): 
+def get_transactions_for_user(start_date='2024-04-01', end_date=None): 
     """ Get all transactions for a user in chronological order. """ 
 
     from pprint import pprint
@@ -91,22 +91,23 @@ def get_transactions_for_user(start_date='2024-07-21', end_date=None):
         consumer_key=consumer_key
     )
 
-    response = snaptrade.transactions_and_reporting.get_activities(
+    response = snaptrade.account_information.get_account_activities(
+        account_id=cad_account_id,   # this will give me for both CAD, and USD
         user_id=user_id,
         user_secret=user_secret,
         start_date=start_date,
         end_date=end_date
     )
     #pprint(response.body)
-    resp = sorted(response.body, key=lambda x:x["trade_date"])
-    
+    resp = sorted(response.body["data"], key=lambda x:x["trade_date"])
+    #print(resp)
     
     return resp
 
 if __name__ == "__main__":
-    get_api_status()
+    #get_api_status()
     #list_accounts()
     
     #list_account_holdings()
-    #resp = get_transactions_for_user("2024-07-21", "2025-09-25")
-    #print(json.dumps(resp, indent=4))
+    resp = get_transactions_for_user("2025-08-15", "2025-09-14") # just to make sure all good!
+    print(json.dumps(resp, indent=4))

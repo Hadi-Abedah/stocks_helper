@@ -37,11 +37,16 @@ def send_alert(sector_dict, label):
         print(f"Error sending request: {e}")
 
 
+def chunked(iterable, n):
+    """Yield successive n-sized chunks from iterable."""
+    for i in range(0, len(iterable), n):
+        yield iterable[i:i + n]
+
 def main():
     script_dir = Path(__file__).parent
     all_dfs = [
-        pd.read_csv(f"{script_dir}/nasdaq_screener_1742828936231.csv"),
-        pd.read_csv(f"{script_dir}/nasdaq_screener_1742829385454.csv")
+        pd.read_csv(f"{script_dir}/nasdaq_screener_1747363955212.csv"),
+        pd.read_csv(f"{script_dir}/nasdaq_screener_1747364000664.csv")
     ]
 
     combined_df = pd.concat(all_dfs, ignore_index=True)
@@ -60,12 +65,18 @@ def main():
         
     
     try:
-        ticker_changes = compute_daily_prec(symbols)
-        
-        for symbol, perc_chng in ticker_changes:
-            if perc_chng <= -8:
+        all_ticker_changes = []
+        for symbol_chunk in chunked(symbols[0:3000], 300):  
+            ticker_changes = compute_daily_prec(symbol_chunk)
+            if ticker_changes:
+                all_ticker_changes.extend(ticker_changes)
+
+        sorted_daily_changes = sorted(all_ticker_changes, key=lambda x: x[1], reverse=True)
+
+        for symbol, perc_chng in sorted_daily_changes:
+            if perc_chng <= -5:
                 underperform_by_sector[symbol_sector_dict[symbol]].append((symbol, perc_chng))
-            elif perc_chng >= 8:
+            elif perc_chng >= 5:
                 overperform_by_sector[symbol_sector_dict[symbol]].append((symbol, perc_chng))
     except (ValueError, TypeError) as e:
         print(f"Error - {e}")

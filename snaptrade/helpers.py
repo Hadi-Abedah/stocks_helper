@@ -4,7 +4,25 @@ import json
 import os
 
 def find_credited_invst_amount(sold_shares, ticker, file_path=None):
-    """ Read from json to determine how much to credit the investment account after a stock sell. """
+    """
+    Calculates the total credited amount when selling a number of shares for a given stock ticker.
+    
+    It reads from a JSON file that tracks share lots (price + date) and updates it to reflect
+    the sold shares. The lots are consumed in FIFO order as per their appearance in the file.
+
+    Args:
+        sold_shares (float): The number of shares being sold.
+        ticker (str): The stock symbol.
+        file_path (str, optional): Path to the stocks JSON file. If not provided, defaults to 'stocks.json'
+                                   in the same directory as this script.
+
+    Returns:
+        float: Total amount credited based on shares sold and their original purchase prices.
+
+    Raises:
+        FileNotFoundError: If the specified JSON file doesn't exist.
+        ValueError: If not enough shares are available to fulfill the sell request.
+    """
 
     if file_path is None:
         file_path = os.path.join(os.path.dirname(__file__), "stocks.json")
@@ -16,32 +34,50 @@ def find_credited_invst_amount(sold_shares, ticker, file_path=None):
         stocks = json.load(f)
 
     total_amount = 0
-    for price, available_shares in stocks.get(ticker, {}).items():
+    for price_date, available_shares in stocks.get(ticker, {}).items():
         if sold_shares > available_shares:
-            total_amount += float(price.split('_')[0]) * available_shares
+            total_amount += float(price_date.split('_')[0]) * available_shares
             sold_shares -= available_shares
-            stocks[ticker][price] = 0  
+            stocks[ticker][price_date] = 0  
         else:
-            total_amount += sold_shares * float(price.split('_')[0])
-            stocks[ticker][price] -= sold_shares
+            total_amount += sold_shares * float(price_date.split('_')[0])
+            stocks[ticker][price_date] -= sold_shares
             break
+
+        
 
     # Write the updated stocks back to the file
     with open(file_path, "w") as f:
         json.dump(stocks, f, indent=4)
+        
 
     return total_amount
 
 
-def update_invst_amounts(bought_shares, ticker, price, date, file_path=None):
-    """ Write to a json file to track stock purchases for later selling. """
+def update_invst_amounts(bought_shares, ticker, price, date, is_option=None,file_path=None):
 
+    """
+    Write to a JSON file to track stock purchases for later selling.
+
+    Args:
+        bought_shares (float): Number of shares bought.
+        ticker (str): Ticker symbol.
+        price (float or str): Per-share price (used to construct unique lot keys).
+        date (str): ISO-format date of purchase (e.g., '2025-04-15').
+        transaction_id (str): Unique transaction ID to ensure idempotency.
+        file_path (str): Path to stocks.json file. Defaults to local directory.
+    """
     from datetime import datetime
+
     if file_path is None:
         file_path = os.path.join(os.path.dirname(__file__), "stocks.json")
+
         
     date = datetime.fromisoformat(date).strftime("%Y-%m-%d")
     unique_key = f"{price}_{date}"  # so When I purchase in future with the same price, FIFO is preserved!
+    # add marker if the investment is for an option contract 
+    if is_option: 
+        unique_key += "_option"
     # I will hard code some transactions that were USD stocks, but bought using CAD in the period 2024-07-22 to 2024-08-23
     if ticker == 'SYM' and unique_key == '31.9094_2024-08-23':
         unique_key = '23.1625_2024-08-23'
@@ -87,9 +123,95 @@ def find_all_transcription_types(start_date="2024-07-01", end_date="2025-03-19")
             transactions_dict[transaction['type']] = transaction['description']
     return transactions_dict, lst_of_transactions 
 
+def mark_transaction_as_processed(transaction_id, file_path=None):
+    import os, json
+    if file_path is None:
+        file_path = os.path.join(os.path.dirname(__file__), "stocks.json")
+    tx_log_path = os.path.join(os.path.dirname(file_path), "processed_transactions.json")
+
+    try:
+        with open(tx_log_path, "r") as f:
+            processed = set(json.load(f))
+    except (FileNotFoundError, json.JSONDecodeError):
+        processed = set()
+
+    if transaction_id not in processed:
+        processed.add(transaction_id)
+        with open(tx_log_path, "w") as f:
+            json.dump(list(processed), f, indent=2)
+
+
+def was_transaction_processed(transaction_id, file_path=None):
+    import os, json
+    if file_path is None:
+        file_path = os.path.join(os.path.dirname(__file__), "stocks.json")
+    tx_log_path = os.path.join(os.path.dirname(file_path), "processed_transactions.json")
+
+    try:
+        with open(tx_log_path, "r") as f:
+            processed = set(json.load(f))
+        return transaction_id in processed
+    except (FileNotFoundError, json.JSONDecodeError):
+        return False
+
 
 #resp = find_all_transcription_types()
 #print(resp)
+
+
+
+import os
+import json
+
+def find_credited_invst_amount_options(ticker, file_path=None):
+    """
+    Calculates the total credited amount when an option contract expires and update the value to zero after processing.
+
+    Args:
+        ticker (str): The stock symbol.
+        file_path (str, optional): Path to the stocks JSON file. If not provided, defaults to 'stocks.json'
+                                   in the same directory as this script.
+
+    Returns:
+        float: Total amount credited based on each share option premiuim * number of share (contracts * 100)
+
+    Raises:
+        FileNotFoundError: If the specified JSON file doesn't exist.
+        
+    """
+
+    if file_path is None:
+        file_path = os.path.join(os.path.dirname(__file__), "stocks.json")
+        
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"{file_path} does not exist.")
+
+    with open(file_path, "r") as f:
+        stocks = json.load(f)
+
+    total_amount = 0
+    for price_date_option, shares in stocks.get(ticker, {}).items():
+        #Either not an option or it has expired before!
+        if (not price_date_option.endswith("_option")) or stocks[ticker][price_date_option] == 0:
+            continue
+
+        else:
+            premium = float(price_date_option.split("_", 1)[0])
+            total_amount += premium * float(shares)
+            stocks[ticker][price_date_option] = 0
+            break
+
+        
+
+    # Write the updated stocks back to the file
+    with open(file_path, "w") as f:
+        json.dump(stocks, f, indent=4)
+        
+
+    return total_amount
+
+
+
 
 
 

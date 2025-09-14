@@ -1,15 +1,17 @@
 from . import read, write, nxt_ear, clean, populate_companies
 from datetime import datetime
+import re
 
 
 def extract_date_from_line(line):
-    ''' Helper function to sort the earnings report by date before writing them.'''
     try:
-        date_str = line.split("is: ")[-1]
-        return datetime.strptime(date_str.strip(), "%Y-%m-%d")
-    except ValueError:
-        print(f"Warning: Invalid date format encountered in line: {line.strip()}")
-        # Return a date far in the past for invalid dates so they are sorted last
+        match = re.search(r"is:\s*([\d]{4}-[\d]{2}-[\d]{2})", line)
+        if match:
+            return datetime.strptime(match.group(1), "%Y-%m-%d")
+        else:
+            raise ValueError("No date found in line.")
+    except Exception:
+        print(f"Warning: Invalid or missing date in line: {line.strip()}")
         return datetime.max
 
 

@@ -8,11 +8,37 @@ def parse_transactions():
     """ parse each transaction and outputs csv rows(list of lists), each row is an account affected by that transaction"""
     
     from .snaptrade_api import get_transactions_for_user
-    from .transactions import deposit, buy_usd_stock, sell_usd_stock, buy_cad_stock, sell_cad_stock, convert_usd_to_cad, fee, dividend, tax
+    from .transactions import deposit, buy_usd_stock, sell_usd_stock, buy_cad_stock, sell_cad_stock, convert_usd_to_cad, fee, dividend, tax, buy_usd_put_option, buy_usd_call_option, option_expire #, sell_cad_call_option, sell_cad_put_option 
+    from .helpers import was_transaction_processed
     outputs = []
     transactions = get_transactions_for_user()
     for transaction in transactions:
-        if transaction['type'] == 'CONTRIBUTION':
+        if was_transaction_processed(transaction['id']):
+            continue
+        # Check if it is an option contract first
+        if transaction.get("option_symbol"):
+            # currency split if you someday trade CAD‑settled options
+            usd = (transaction["currency"]["code"] == "USD")
+
+            # BUY or SELL?                         # until now I only bought put option and it expired, so the code is not complete!
+            if transaction["type"] == "BUY":
+                if transaction["option_symbol"]["option_type"] == "PUT":
+                    output = buy_usd_put_option(transaction)  #if usd else buy_cad_put_option(transaction)
+                else:  # CALL
+                    output = buy_usd_call_option(transaction) #if usd else buy_cad_call_option(transaction)
+
+            #elif transaction["type"] == "SELL":
+            #    if transaction["option_symbol"]["option_type"] == "PUT":
+            #        output = sell_usd_put_option(transaction) if usd else sell_cad_put_option(transaction)
+            #    else:  # CALL
+            #        output = sell_usd_call_option(transaction) if usd else sell_cad_call_option(transaction)
+            #
+            elif transaction["type"] == "OPTIONEXPIRATION":
+               output = option_expire(transaction)
+
+            else:
+                raise ValueError(f"Unknown option transaction type {transaction['type']}")
+        elif transaction['type'] == 'CONTRIBUTION':
             output = deposit(transaction)
         elif transaction['currency']['code'] == 'USD' and transaction['type'] == 'BUY':
             output = buy_usd_stock(transaction)
@@ -31,7 +57,13 @@ def parse_transactions():
         elif transaction['type'] == 'TAX':
             output = tax(transaction)
         else:
-            raise "Invalid transaction type"  # Skip transactions that don't match any case
+            tx_type = transaction.get('type')  # None if missing
+            date = transaction.get('settlement_date')
+            with open("./weird_transactions.txt", "a", encoding="utf-8") as f:
+                f.write(f"Invalid transaction type: {tx_type!r}, Date: {date}\n")
+            output = ["",""]
+            #raise ValueError(f"Invalid transaction type: {tx_type!r}, Date: {date}")
+
         
         # I will hard code some transcations that were USD stcks, but bought uing CAD in the period 2024-07-22 to 2024-08-23
         
