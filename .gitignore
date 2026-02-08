@@ -34,4 +34,6 @@ snaptrade/.env
 snaptrade/python-docs-433001-62f7d270af5b.json
 snaptrade/stocks.json
 snaptrade/transactions.csv
+snaptrade/wrong_stocks.json
+snaptrade/weird_transactions.txt
 companies.csv

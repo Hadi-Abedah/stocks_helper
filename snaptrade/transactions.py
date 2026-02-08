@@ -8,8 +8,8 @@ def deposit(transaction):
     amount = float(transaction['amount'])
     description = transaction['description']
 
-    row1 = [str(date), "TFSA(CAD)", f"{amount:.2f}", "", f"{description} CAD"]
-    row2 = [str(date), "Cash(CAD)", "", f"{amount:.2f}", f"{description} CAD"]
+    row1 = [str(date), "TFSA (CAD)", f"{amount:.2f}", "", f"{description} CAD"]
+    row2 = [str(date), "Cash (CAD)", "", f"{amount:.2f}", f"{description} CAD"]
     mark_transaction_as_processed(transaction["id"])
     return row1, row2
 
@@ -22,10 +22,10 @@ def buy_usd_stock(transaction):
     symbol = transaction['symbol']['symbol']
     description = transaction['description']
 
-    row1 = [str(date), "TFSA(USD)", "", f"{amount:.2f}", f"{description} USD"]
-    row2 = [str(date), f"Investment({symbol})", f"{amount:.2f}", "", f"{description} USD"]
+    row1 = [str(date), "TFSA (USD)", "", f"{amount:.2f}", f"{description} USD"]
+    row2 = [str(date), "Investment (USD)", f"{amount:.2f}", "", f"{description} USD"]
 
-    update_invst_amounts(abs(transaction['units']), symbol, transaction['price'], transaction['settlement_date'])
+    update_invst_amounts(transaction['id'], abs(transaction['units']), symbol, transaction['price'], transaction['settlement_date'])
     mark_transaction_as_processed(transaction["id"])
 
     return row1, row2
@@ -41,15 +41,16 @@ def sell_usd_stock(transaction):
     symbol = transaction['symbol']['symbol']
     description = transaction['description']
 
-    row1 = [str(date), "TFSA(USD)", f"{debited_cash_amount:.2f}", "", f"{description} USD"]
+    row1 = [str(date), "TFSA (USD)", f"{debited_cash_amount:.2f}", "", f"{description} USD"]
     credited_invst_amount = find_credited_invst_amount(abs(transaction['units']), symbol)
-    row2 = [str(date), f"Investment({symbol})", "", f"{credited_invst_amount:.2f}", f"{description} USD"]
+    row2 = [str(date), "Investment (USD)", "", f"{credited_invst_amount:.2f}", f"{description} USD"]
 
     realized_gain_loss = debited_cash_amount - credited_invst_amount
+    account = "Realized Gain/Loss (USD)"
     if realized_gain_loss > 0:
-        row3 = [str(date), "Realized Gain on Sale", "", f"{realized_gain_loss:.2f}", f"{description} USD"]
+        row3 = [str(date), account, "", f"{realized_gain_loss:.2f}", f"{description} USD"]
     else:
-        row3 = [str(date), "Realized Loss on Sale", f"{abs(realized_gain_loss):.2f}", "", f"{description} USD"]
+        row3 = [str(date), account, f"{abs(realized_gain_loss):.2f}", "", f"{description} USD"]
 
     mark_transaction_as_processed(transaction["id"])
     return row1, row2, row3
@@ -63,10 +64,10 @@ def buy_cad_stock(transaction):
     symbol = transaction['symbol']['symbol']
     description = transaction['description']
 
-    row1 = [str(date), "TFSA(CAD)", "", f"{amount:.2f}", f"{description} CAD"]
-    row2 = [str(date), f"Investment({symbol})", f"{amount:.2f}", "", f"{description} CAD"]
+    row1 = [str(date), "TFSA (CAD)", "", f"{amount:.2f}", f"{description} CAD"]
+    row2 = [str(date), "Investment (CAD)", f"{amount:.2f}", "", f"{description} CAD"]
 
-    update_invst_amounts(abs(transaction['units']), symbol, transaction['price'], transaction['settlement_date'])
+    update_invst_amounts(transaction['id'], abs(transaction['units']), symbol, transaction['price'], transaction['settlement_date'])
     mark_transaction_as_processed(transaction["id"])
 
     return row1, row2
@@ -82,20 +83,21 @@ def sell_cad_stock(transaction):
     symbol = transaction['symbol']['symbol']
     description = transaction['description']
 
-    row1 = [str(date), "TFSA(CAD)", f"{debited_cash_amount:.2f}", "", f"{description} CAD"]
+    row1 = [str(date), "TFSA (CAD)", f"{debited_cash_amount:.2f}", "", f"{description} CAD"]
     credited_invst_amount = find_credited_invst_amount(abs(transaction['units']), symbol)
-    row2 = [str(date), f"Investment({symbol})", "", f"{credited_invst_amount:.2f}", f"{description} CAD"]
+    row2 = [str(date), "Investment (CAD)", "", f"{credited_invst_amount:.2f}", f"{description} CAD"]
 
     realized_gain_loss = debited_cash_amount - credited_invst_amount
+    account = "Realized Gain/Loss (CAD)"
     if realized_gain_loss > 0:
-        row3 = [str(date), "Realized Gain on Sale", "", f"{realized_gain_loss:.2f}", f"{description} CAD"]
+        row3 = [str(date), account, "", f"{realized_gain_loss:.2f}", f"{description} CAD"]
     else:
-        row3 = [str(date), "Realized Loss on Sale", f"{abs(realized_gain_loss):.2f}", "", f"{description} CAD"]
+        row3 = [str(date), account, f"{abs(realized_gain_loss):.2f}", "", f"{description} CAD"]
 
     mark_transaction_as_processed(transaction["id"])
     return row1, row2, row3
 
-def convert_usd_to_cad(transaction):
+def convert_cad_to_usd(transaction):
     from datetime import datetime
     from .helpers import mark_transaction_as_processed
 
@@ -103,9 +105,9 @@ def convert_usd_to_cad(transaction):
     amount = float(abs(transaction['amount']))
     description = transaction['description']
 
-    row1 = [str(date), "TFSA(USD)", f"{amount}", "", description]
-    row2 = [str(date), "TFSA(CAD)", "", "", description]
-    row3 = [str(date), "Currency Conversion Expense", "", "", description]
+    row1 = [str(date), "TFSA (USD)", f"{amount}", "", description]
+    row2 = [str(date), "TFSA (CAD)", "", "", description]
+    row3 = [str(date), "Currency Conversion Expense (CAD)", "", "", description]
     mark_transaction_as_processed(transaction["id"])
     return row1, row2, row3
 
@@ -117,8 +119,8 @@ def fee(transaction):
     amount = float(abs(transaction['amount']))
     description = transaction['description']
 
-    row1 = [str(date), "TFSA(CAD)", "", f"{amount:.2f}", description]
-    row2 = [str(date), "TFSA Fee Expense", f"{amount:.2f}", "", description]
+    row1 = [str(date), "TFSA (CAD)", "", f"{amount:.2f}", description]
+    row2 = [str(date), "Fee Expense (CAD)", f"{amount:.2f}", "", description]
     mark_transaction_as_processed(transaction["id"])
     return row1, row2
 
@@ -131,8 +133,8 @@ def dividend(transaction):
     currency = transaction['currency']['code']
     description = transaction['description']
 
-    tfsa_account = "TFSA(CAD)" if currency == "CAD" else "TFSA(USD)"
-    income_account = "Dividend Income(CAD)" if currency == "CAD" else "Dividend Income(USD)"
+    tfsa_account = "TFSA (CAD)" if currency == "CAD" else "TFSA (USD)"
+    income_account = "Dividend Income (CAD)" if currency == "CAD" else "Dividend Income (USD)"
 
     row1 = [str(date), tfsa_account, f"{amount:.2f}", "", description]
     row2 = [str(date), income_account, "", f"{amount:.2f}", description]
@@ -148,8 +150,8 @@ def tax(transaction):
     description = transaction['description']
     symbol_description = transaction['symbol']['description']
 
-    row1 = [str(date), "TFSA(USD)", "", f"{amount:.2f}", description]
-    row2 = [str(date), "Tax Expense", f"{amount:.2f}", "", f"{description}({symbol_description})"]
+    row1 = [str(date), "TFSA (USD)", "", f"{amount:.2f}", description]
+    row2 = [str(date), "Tax Expense (USD)", f"{amount:.2f}", "", f"{description}({symbol_description})"]
     mark_transaction_as_processed(transaction["id"])
     return row1, row2
 
@@ -180,10 +182,10 @@ def buy_usd_put_option(transaction):
     description = f"Bought {contracts} PUT option for {underlying} at {strike}"
 
     # --- journal rows -----------------------------------------------------
-    row1 = [str(date), "TFSA(USD)", "",           f"{amount:.2f}", f"{description} USD"]
-    row2 = [str(date), f"Investment({option_tkr})", f"{amount:.2f}", "",         f"{description} USD"]
+    row1 = [str(date), "TFSA (USD)", "",           f"{amount:.2f}", f"{description} USD"]
+    row2 = [str(date), "Investment (USD)", f"{amount:.2f}", "",         f"{description} USD"]
 
-    update_invst_amounts(contracts, option_tkr, transaction["price"], transaction["settlement_date"], is_option=True)
+    update_invst_amounts(transaction["id"], contracts, option_tkr, transaction["price"], transaction["settlement_date"], is_option=True)
     mark_transaction_as_processed(transaction["id"])
     return row1, row2
 
@@ -204,8 +206,8 @@ def buy_usd_call_option(transaction):
 
     descr = f"Bought {contracts} CALL option{'s' if contracts!=100 else ''} for {symbol} at {strike}"
 
-    row1 = [str(date), "TFSA(USD)", "", f"{amount:.2f}", f"{descr} USD"]
-    row2 = [str(date), f"Investment({symbol})", f"{amount:.2f}", "", f"{descr} USD"]
+    row1 = [str(date), "TFSA (USD)", "", f"{amount:.2f}", f"{descr} USD"]
+    row2 = [str(date), "Investment (USD)", f"{amount:.2f}", "", f"{descr} USD"]
 
     update_invst_amounts(contracts, symbol, transaction["price"],
                          transaction["settlement_date"], is_option=True)
@@ -228,8 +230,8 @@ def buy_cad_put_option(transaction):
 
     descr = f"Bought {contracts} PUT option{'s' if contracts!=100 else ''} for {symbol} at {strike}"
 
-    row1 = [str(date), "TFSA(CAD)", "", f"{amount:.2f}", f"{descr} CAD"]
-    row2 = [str(date), f"Investment({symbol})", f"{amount:.2f}", "", f"{descr} CAD"]
+    row1 = [str(date), "TFSA (CAD)", "", f"{amount:.2f}", f"{descr} CAD"]
+    row2 = [str(date), "Investment (CAD)", f"{amount:.2f}", "", f"{descr} CAD"]
 
     update_invst_amounts(contracts, symbol, transaction["price"],
                          transaction["settlement_date"], is_option=True)
@@ -252,8 +254,8 @@ def buy_cad_call_option(transaction):
 
     descr = f"Bought {contracts} CALL option{'s' if contracts!=100 else ''} for {symbol} at {strike}"
 
-    row1 = [str(date), "TFSA(CAD)", "", f"{amount:.2f}", f"{descr} CAD"]
-    row2 = [str(date), f"Investment({symbol})", f"{amount:.2f}", "", f"{descr} CAD"]
+    row1 = [str(date), "TFSA (CAD)", "", f"{amount:.2f}", f"{descr} CAD"]
+    row2 = [str(date), "Investment (CAD)", f"{amount:.2f}", "", f"{descr} CAD"]
 
     update_invst_amounts(contracts, symbol, transaction["price"],
                          transaction["settlement_date"], is_option=True)
@@ -273,8 +275,10 @@ def option_expire(transaction):
     description = f"{transaction['description']}_{symbol}"
     premium_paid = find_credited_invst_amount_options(symbol)
 
-    row1 = [str(date), f"Options Loss({currency})", f"{premium_paid:.2f}", "", f"{description}"]
-    row2 = [str(date), f"Investment({symbol})", "", f"{premium_paid:.2f}", f"{description}"]
+    # Record the expired option premium as a debit in the realized gain/loss account
+    account = f"Realized Gain/Loss ({currency})"
+    row1 = [str(date), account, f"{premium_paid:.2f}", "", f"{description}"]
+    row2 = [str(date), f"Investment ({currency})", "", f"{premium_paid:.2f}", f"{description}"]
 
     mark_transaction_as_processed(transaction["id"])
     return row1, row2

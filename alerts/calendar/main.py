@@ -76,15 +76,19 @@ def main() -> None:
                 if stored_date> datetime.today().date():
                     # Event date changed: update existing event
                     existing_event_id = next(iter(calendar_dates[stock].values()))
-                    event = update_event(
-                        event_id=existing_event_id,
-                        updates={
-                            # If your update_event expects RFC3339 strings instead of datetimes, use start_dt.isoformat()
-                            "start": {"dateTime": start_dt.isoformat(), "timeZone": DEFAULT_TZ},
-                            "end": {"dateTime": end_dt.isoformat(), "timeZone": DEFAULT_TZ},
-                            # optionally: "start": {"timeZone": DEFAULT_TZ}, "end": {"timeZone": DEFAULT_TZ},
-                        },
-                    )
+                    try:
+                        event = update_event(
+                            event_id=existing_event_id,
+                            updates={
+                                # If your update_event expects RFC3339 strings instead of datetimes, use start_dt.isoformat()
+                                "start": {"dateTime": start_dt.isoformat(), "timeZone": DEFAULT_TZ},
+                                "end": {"dateTime": end_dt.isoformat(), "timeZone": DEFAULT_TZ},
+                                # optionally: "start": {"timeZone": DEFAULT_TZ}, "end": {"timeZone": DEFAULT_TZ},
+                            },
+                        )
+                    except Exception as e:
+                        print(f"Error updating event for {stock}: {e}")
+                        continue
                     changes_to_calendar_dates[stock] ={ date_str : event["id"] }
                     #calendar_dates[stock] = {date_str: event["id"]}
                     print(f"Updated event for {stock}")
@@ -117,6 +121,6 @@ def main() -> None:
     # Persist mirror
     with open("calendar_dates.json", "w") as f:
         json.dump(calendar_dates, f, indent=4)
-    print("Calendar sync complete.")
+    print("Calendar sync complete.", datetime.now().isoformat())
 if __name__ == "__main__":
     main()

@@ -92,14 +92,22 @@ def get_transactions_for_user(start_date='2024-04-01', end_date=None):
     )
 
     response = snaptrade.account_information.get_account_activities(
-        account_id=cad_account_id,   # this will give me for both CAD, and USD
+        account_id=cad_account_id,   # this will give me for both CAD, and USD (after June 2025)
         user_id=user_id,
         user_secret=user_secret,
         start_date=start_date,
         end_date=end_date
     )
+    response_2 = snaptrade.account_information.get_account_activities(
+        account_id=usd_account_id,
+        user_id=user_id,
+        user_secret=user_secret,
+        start_date=start_date,
+        end_date=end_date
+    )
+    response.body["data"].extend(response_2.body["data"])
     #pprint(response.body)
-    resp = sorted(response.body["data"], key=lambda x:x["trade_date"])
+    resp = sorted(response.body["data"], key=lambda x: x.get("settlement_date") or x.get("trade_date"))
     #print(resp)
     
     return resp
@@ -109,5 +117,5 @@ if __name__ == "__main__":
     #list_accounts()
     
     #list_account_holdings()
-    resp = get_transactions_for_user("2025-08-15", "2025-09-14") # just to make sure all good!
+    resp = get_transactions_for_user("2025-09-03", "2025-09-03")  #just to make sure all good!
     print(json.dumps(resp, indent=4))
