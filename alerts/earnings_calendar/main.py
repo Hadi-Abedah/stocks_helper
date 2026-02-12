@@ -1,9 +1,11 @@
 import json
-from alerts.calendar.calendar_actions import create_event, update_event, delete_event, DEFAULT_TZ, DEFAULT_CALENDAR_ID
+from pathlib import Path
+from alerts.earnings_calendar.calendar_actions import create_event, update_event, delete_event, DEFAULT_TZ, DEFAULT_CALENDAR_ID
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
-from zoneinfo import ZoneInfo  # Python 3.9+
-
+from zoneinfo import ZoneInfo  
+from stock_actions.watch_list.main import read as read_watch_list
+from stock_actions.earnings import nxt_ear
 TZ = ZoneInfo(DEFAULT_TZ)
 
 def _parse_local_window(date_str: str):
@@ -16,30 +18,42 @@ def _parse_local_window(date_str: str):
 
 def main() -> None:
     """Compare dates.json with calendar_dates.json; create/update Google Calendar events as needed.
-    dates.json file format: { "TICKER": "YYYY-MM-DD", ... } (written by google_docs/main.py)
+    dates.json file format: { "TICKER": "YYYY-MM-DD", ... } (mirror of upstream earnings data)
     calendar_dates.json file format: { "TICKER": { "YYYY-MM-DD": "event_id" }, ... } (mirror of calendar state)
     1. For each TICKER in dates.json:
        a. If TICKER not in calendar_dates.json, create event and add to calendar_dates.json.
        b. If TICKER in calendar_dates.json, compare dates:
           i. If dates differ and stored date is in the future, update event date.
-          ii. If dates differ and stored date is in the past, delete old entry and create new event.
+          ii. If dates differ and stored date is in the past, create new event.
     2. Save updated calendar_dates.json.
     """
+    # the script dir path 
+    file_path = Path(__file__).resolve().parent
+    # update dates.json with the latest earnings dates
+    list_of_companies = read_watch_list() 
+    json_to_be_written = {}
+    for company in list_of_companies:
+        ticker, date, eps, revenue = nxt_ear.get_next_earnings_date(company)
+        if date:
+            print("adta ")
+            json_data = {ticker: str(date)} 
+            json_to_be_written.update(json_data)
+    with open(file_path / "dates.json", "w") as f:
+        json.dump(json_to_be_written, f, indent=4)
     # Load upstream dates: { "TICKER": "YYYY-MM-DD", ... }
-    
-    changes_to_calendar_dates = {}
-    with open("dates.json", "r") as f:
+    with open(file_path / "dates.json", "r") as f:
         dates: Dict[str, str] = json.load(f)
 
     # Load or initialize calendar mirror: { "TICKER": { "YYYY-MM-DD": "event_id" } }
     try:
-        with open("calendar_dates.json", "r") as f:
+        with open(file_path / "calendar_dates.json", "r") as f:
             calendar_dates: Dict[str, Dict[str, str]] = json.load(f)
     except FileNotFoundError:
         calendar_dates = {}
-        with open("calendar_dates.json", "w") as f:
+        with open(file_path / "calendar_dates.json", "w") as f:
             json.dump(calendar_dates, f, indent=4)
 
+    changes_to_calendar_dates = {}
     for stock, date_str in dates.items():
         if not date_str:
             continue  # skip None/empty
@@ -119,7 +133,7 @@ def main() -> None:
     calendar_dates.update(changes_to_calendar_dates)
 
     # Persist mirror
-    with open("calendar_dates.json", "w") as f:
+    with open(file_path /"calendar_dates.json", "w") as f:
         json.dump(calendar_dates, f, indent=4)
     print("Calendar sync complete.", datetime.now().isoformat())
 if __name__ == "__main__":

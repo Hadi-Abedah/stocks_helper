@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 from pathlib import Path
 from collections import defaultdict
-from percentage_change.daily_perc_chng import compute_daily_prec
+from stock_actions.percentage_change.daily_perc_chng import compute_daily_prec
 
 API_URL = "https://api.callmebot.com/telegram/group.php"
 API_KEY = "LTEwMDIzODAyODEzNTU"  # free trial!

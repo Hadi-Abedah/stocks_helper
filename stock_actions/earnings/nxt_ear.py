@@ -30,6 +30,6 @@ def get_next_earnings_date(ticker):
 
 
 if __name__ == "__main__":
-    ticker_symbol = "PPTA.TO"
+    ticker_symbol = "BA"
     next_date = get_next_earnings_date(ticker_symbol)
     print(next_date)

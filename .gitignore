@@ -28,6 +28,7 @@ __pycache__/
 alerts/**/credentials.json
 alerts/**/token*.json
 alerts/daily_stocks_alert/*.csv
+alerts/earnings_google_docs/python-docs-433001-acddc8c4514a.json
 
 # other
 snaptrade/.env

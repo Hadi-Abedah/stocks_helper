@@ -1,10 +1,18 @@
 def read():
-    """ It will read from both company files and return a list of unique companies."""
+    """
+    This function reads the companies.csv and companies_owned.csv files and returns a list of unique companies.
+    It first populates the companies_owned.csv file then reads both files and combines the companies into a single list, removing duplicates.
+    """
     from pathlib import Path
+    from . import populate_owned
+
+    # First populate the companies_owned.csv file with the current holdings
+    populate_owned.populate_companies_file()
 
     script_path = Path(__file__).resolve().parent
-    companies_file = script_path.parent / "companies.csv"
-    companies_owned_file = script_path.parent / "companies_owned.csv"
+    # files live in the same `watch_list` directory
+    companies_file = script_path / "companies.csv"
+    companies_owned_file = script_path / "companies_owned.csv"
     list_of_companies = []
 
     # Read from companies.csv
