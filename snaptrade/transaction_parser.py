@@ -136,7 +136,124 @@ def parse_transactions():
         
         outputs.append(output)    
     return outputs
-            
+
+from .helpers import was_transaction_processed, mark_transaction_as_processed
+
+# keep your HARD_CODED dict as-is
+
+
+def parse_transactions_db():
+    """
+    Generator version of parse_transactions() meant for database insertion:
+    yields (tx_id, rows) for each transaction, where rows is a list of 5-element rows:
+        [Date, Account, Debit, Credit, Description]
+
+    Keeps your current paradigm:
+    - classify tx -> call handler -> output rows
+    - then override rows if tid in HARD_CODED (row-layer override)
+    Returns:
+      Generator[tuple[str, list[list[str]]]]: Yields (tx_id, rows) for each transaction,
+    """
+    import os
+    import json
+    from .snaptrade_api import get_transactions_for_user
+    from .transactions import (
+        deposit, buy_usd_stock, sell_usd_stock, buy_cad_stock, sell_cad_stock,
+        convert_cad_to_usd, fee, dividend, tax,
+        buy_usd_put_option, buy_usd_call_option, option_expire,
+    )
+    from .helpers import was_transaction_processed  # (you already import at top; keeping local is fine)
+
+    transactions = get_transactions_for_user()
+
+    for transaction in transactions:
+        tid = transaction.get("id")
+        if not tid:
+            continue
+
+        if was_transaction_processed(tid):
+            continue
+
+        # Default output
+        output = []
+
+        # --- your existing classification chain ---
+        if transaction.get("option_symbol"):
+            usd = (transaction["currency"]["code"] == "USD")  # still unused but ok
+
+            if transaction["type"] == "BUY":
+                if transaction["option_symbol"]["option_type"] == "PUT":
+                    output = buy_usd_put_option(transaction)
+                else:
+                    output = buy_usd_call_option(transaction)
+
+            elif transaction["type"] == "OPTIONEXPIRATION":
+                output = option_expire(transaction)
+
+            else:
+                raise ValueError(f"Unknown option transaction type {transaction['type']}")
+
+        elif transaction["type"] == "CONTRIBUTION":
+            output = deposit(transaction)
+
+        elif transaction["currency"]["code"] == "USD" and transaction["type"] == "BUY":
+            output = buy_usd_stock(transaction)
+
+        elif transaction["currency"]["code"] == "USD" and transaction["type"] == "SELL":
+            output = sell_usd_stock(transaction)
+
+        elif transaction["currency"]["code"] == "CAD" and transaction["type"] == "BUY":
+            output = buy_cad_stock(transaction)
+
+        elif transaction["currency"]["code"] == "CAD" and transaction["type"] == "SELL":
+            output = sell_cad_stock(transaction)
+
+        elif transaction["type"] == "FUNDS_CONVERSION":
+            output = convert_cad_to_usd(transaction)
+
+        elif transaction.get("description") == "FEE":
+            output = fee(transaction)
+
+        elif transaction["type"] == "DIVIDEND":
+            output = dividend(transaction)
+
+        elif transaction["type"] == "TAX":
+            output = tax(transaction)
+
+        else:
+            # weird logging 
+            wrong_file_path = os.path.join(os.path.dirname(__file__), "weird_transactions.txt")
+            entry = {
+                "id": tid,
+                "type": transaction.get("type"),
+                "date": transaction.get("settlement_date"),
+                "transaction": transaction,
+            }
+            with open(wrong_file_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, default=str, indent=4) + "\n")
+
+            # If you want to avoid repeated weirds, you can mark processed here.
+            # But keep your existing behavior:
+            try:
+                if tid:
+                    mark_transaction_as_processed(tid)
+            except Exception:
+                pass
+
+            output = []  
+
+        # --- row-layer override for hardcoded TIDs ---
+        if tid in HARD_CODED:
+            output = HARD_CODED[tid]
+
+        # Ensure rows are well-formed (optional but strongly recommended)
+        rows = [
+            row for row in (output or [])
+            if isinstance(row, (list, tuple)) and len(row) == 5
+        ]
+
+        yield tid, rows
+          
 
 if __name__ == "__main__":
     print("Date,Account,Debit,Credit,Description")    

@@ -130,11 +130,12 @@ def find_all_transcription_types(start_date="2024-07-01", end_date="2026-03-19")
     print(transactions_dict, lst_of_transactions)
     return transactions_dict, lst_of_transactions 
 
-def mark_transaction_as_processed(transaction_id, file_path=None):
+def mark_transaction_as_processed(transaction_id, db=False):
     import os, json
-    if file_path is None:
-        file_path = os.path.join(os.path.dirname(__file__), "stocks.json")
-    tx_log_path = os.path.join(os.path.dirname(file_path), "processed_transactions.json")
+    base_path = os.path.dirname(__file__)
+    tx_log_path = os.path.join(base_path, "processed_transactions.json")
+    if db:
+        tx_log_path = os.path.join(base_path, "processed_transactions_db.json")
 
     try:
         with open(tx_log_path, "r") as f:
@@ -148,11 +149,12 @@ def mark_transaction_as_processed(transaction_id, file_path=None):
             json.dump(list(processed), f, indent=2)
 
 
-def was_transaction_processed(transaction_id, file_path=None):
+def was_transaction_processed(transaction_id, db=False):
     import os, json
-    if file_path is None:
-        file_path = os.path.join(os.path.dirname(__file__), "stocks.json")
-    tx_log_path = os.path.join(os.path.dirname(file_path), "processed_transactions.json")
+    base_path = os.path.dirname(__file__)
+    tx_log_path = os.path.join(base_path, "processed_transactions.json")
+    if db:
+        tx_log_path = os.path.join(base_path, "processed_transactions_db.json")
 
     try:
         with open(tx_log_path, "r") as f:
